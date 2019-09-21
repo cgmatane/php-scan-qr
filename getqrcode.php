@@ -2,13 +2,23 @@
 
 require_once('./db.php');
 
-if (isset($_GET['qr'])) {
-	$query = 	"SELECT passager.prenom, passager.nom 
+
+function qr_valide($qr) {
+   return (strlen($qr) == 7);
+}
+
+if (isset($_GET['qr']) && qr_valide($_GET['qr'])) {
+	$query = "SELECT passager.prenom, passager.nom 
 				FROM commande
 				INNER JOIN acheteur ON acheteur.id_acheteur = commande.id_acheteur
 				INNER JOIN passager ON passager.id_acheteur = acheteur.id_acheteur
-				WHERE commande.qrcode = '". $_GET['qr'] ."';";
-	$result = pg_query($query);
+				WHERE commande.qrcode = $1;";
+
+	$qr = $_GET['qr'];
+
+	$result = pg_prepare($dbconn, "my_query", $query);
+
+	$result = pg_execute($dbconn, "my_query", array($qr));
 	
 	if (pg_num_rows($result) == 0) {
 		echo "<span class='error'>Billet invalide</scan>";
